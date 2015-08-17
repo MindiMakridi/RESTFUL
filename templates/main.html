@@ -1,0 +1,18 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+<title>Restfull</title>
+</head>
+<body>
+<?php
+while(false!=($fname=readdir($dir))):
+	if(preg_match("/jpg|png|gif/", $fname)):
+?>
+<a href="/images/<?= $fname ?>"><img src="<?=Thumbnail::link($fname, 100, 100, "crop") ?>"></a>
+
+<?php endif; endwhile
+?>
+
+</body>
+</html>

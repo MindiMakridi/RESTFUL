@@ -1,0 +1,5 @@
+RewriteEngine On
+RewriteBase /
+RewriteCond %{DOCUMENT_ROOT}/$1 -d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(thumbnails/(scale|crop)/[0-9]+x[0-9]+/)(.+)$ createThumb.php [NC]
