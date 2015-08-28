@@ -80,13 +80,17 @@ class Thumbnail{
 
         if($width>$height){
             $scale = $this->thumbWidth/$width;
-            $cropHeight = $this->thumbHeight;
-            $cropWidth = floor($width*($this->thumbHeight/$height));
+            $cropHeight = $height;
+            $cropWidth = $cropHeight;
+            $cropX = floor($width/2-$cropHeight/2);
+            $cropY = 0;
         }
         else{
             $scale = $this->thumbHeight/$height;
-            $cropWidth = $this->thumbWidth;
-            $cropHeight = floor($height*($this->thumbWidth/$width));
+            $cropWidth = $width;
+            $cropHeight = $cropWidth;
+            $cropY = floor($height/2-$cropWidth/2);
+            $cropX = 0;
         }
 
 
@@ -103,17 +107,22 @@ class Thumbnail{
         elseif ($this->mode=="crop") {
             $newWidth = $this->thumbWidth;
             $newHeight = $this->thumbHeight;
-            $y = floor($height/2-$this->thumbHeight/2);
-            $x = floor($width/2-$this->thumbWidth/2);
+            
+            
             
             if ($width==$height) {
                 $cropWidth = $newWidth;
                 $cropHeight = $newHeight;
+                $cropX = 0;
+                $cropY = 0;
                 
             }
            
             $width = $cropWidth;
             $height = $cropHeight;
+            
+            $x = $cropX;
+            $y = $cropY;
 
 
         }

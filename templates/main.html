@@ -9,7 +9,7 @@
 while(false!=($fname=readdir($dir))):
 	if(preg_match("/jpg|png|gif/", $fname)):
 ?>
-<a href="/images/<?= $fname ?>"><img src="<?=Thumbnail::link($fname, 100, 100, "scale") ?>"></a>
+<a href="/images/<?= $fname ?>"><img src="<?=Thumbnail::link($fname, 100, 100, "crop") ?>"></a>
 
 <?php endif; endwhile
 ?>
