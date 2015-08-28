@@ -1,16 +1,17 @@
 <?php
+$message = "";
 if (isset($_FILES['picture'])) {
     
     
     $extension = getimagesize($_FILES['picture']['tmp_name']);
     switch ($extension[2]) {
-        case 1:
+        case IMAGETYPE_GIF:
             $extension = "gif";
             break;
-        case 2:
+        case IMAGETYPE_JPEG:
             $extension = "jpg";
             break;
-        case 3:
+        case IMAGETYPE_PNG:
             $extension = "png";
             break;
         default:
@@ -20,32 +21,22 @@ if (isset($_FILES['picture'])) {
         die("Не верный формат изображения");
     }
     
-    $image = file_get_contents($_FILES['picture']['tmp_name']);
-    $dir   = opendir("images");
-    
-    while (false != ($fname = readdir($dir))) {
-        if (preg_match("/jpg|png|gif/", $fname)) {
-            $tmpImage = file_get_contents("images/$fname");
-            if ($image == $tmpImage) {
-                die("Picture already exist");
-                exit();
-            }
-        }
-    }
-    
+  
+    $i = 0;
     do {
         $random   = mt_rand(100000, 999999);
         $fileName = "$random." . $extension;
-    } while (file_exists("images/$fileName"));
+        $i++;
+    } while (file_exists("images/$fileName" && $i<=20));
     
     
     
     
     
     if (move_uploaded_file($_FILES['picture']['tmp_name'], "images/$fileName")) {
-        echo "Файл загружен";
+        $message = "Файл загружен";
     } else {
-        echo "Произошла ошибка";
+        $message = "Произошла ошибка";
     }
 }
 include "templates/upload.html";
