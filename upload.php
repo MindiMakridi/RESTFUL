@@ -29,7 +29,9 @@ if (isset($_FILES['picture'])) {
         $i++;
     } while (file_exists("images/$fileName" && $i<=20));
     
-    
+    if($i>20){
+        $message = "Превышено число попыток";
+    }
     
     
     
