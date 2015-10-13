@@ -1,173 +1,186 @@
 <?php
 
-class Thumbnail{
+class Thumbnail
+{
+    const MODE_SCALE = "scale";
+    const MODE_CROP = "crop";
     protected $fileName;
     protected $thumbPath;
+    protected $srcImagePath;
     protected $thumbWidth;
     protected $thumbHeight;
     protected $extension;
     protected $mode;
     protected $mime;
-
-
-    public function __construct($url){
-        $url = parse_url($url);
-        $url = $url['path'];
+    protected $imgCreateFunc;
+    protected $imgFunc;
+    
+    
+    public function __construct($url)
+    {
+        $url = parse_url($url, PHP_URL_PATH);
+        
         $this->thumbPath = ltrim($url, "/");
-        $match = array();
+        $match           = array();
         preg_match("#^/thumbnails/(crop|scale)/([0-9]+)x([0-9]+)/(.+)$#u", $url, $match);
-        $this->mode = $match[1];
-        $this->thumbWidth = $match[2];
-        $this->thumbHeight = $match[3];
-        $this->fileName = $match[4];
-        $this->extension = $this->getExtension();
-        $this->mime = $this->getMime();
+        $this->mode         = $match[1];
+        $this->thumbWidth   = $match[2];
+        $this->thumbHeight  = $match[3];
+        $this->fileName     = $match[4];
+        $this->srcImagePath = "images/$this->fileName";
+        $this->extension    = $this->getExtension();
+        $this->mime         = $this->getMime();
         
     }
-
- 
-
-   
     
-
-   protected function getExtension(){
-        $size = getimagesize("images/$this->fileName");
-        if($size == false){
-            throw new Exception("Файл не является изображением");
-            
-        }
-        switch($size[2]){
-            case IMAGETYPE_GIF: return "gif";
-                    break;
-            case IMAGETYPE_JPEG: return "jpeg";
-                    break;
-            case IMAGETYPE_PNG: return "png";
-                    break;                
+    
+    
+    
+    
+    
+    protected function getExtension()
+    {
+        $size = getimagesize($this->srcImagePath);
+        
+        switch ($size[2]) {
+            case IMAGETYPE_GIF:
+                $this->imgCreateFunc = "imagecreatefromgif";
+                $this->imgFunc       = "imagegif";
+                return "gif";
+                break;
+            case IMAGETYPE_JPEG:
+                $this->imgCreateFunc = "imagecreatefromjpeg";
+                $this->imgFunc       = "imagejpeg";
+                return "jpeg";
+                break;
+            case IMAGETYPE_PNG:
+                $this->imgCreateFunc = "imagecreatefrompng";
+                $this->imgFunc       = "imagepng";
+                return "png";
+                break;
+            default:
+                throw new PreviewGenerationException("Incorrect file extension");
+                
         }
     }
-
-    protected function getMime(){
-        $size = getimagesize("images/$this->fileName");
-        if($size == false){
+    
+    protected function getMime()
+    {
+        $size = getimagesize($this->srcImagePath);
+        if ($size == false) {
             throw new Exception("Файл не является изображением");
             
         }
         return $size['mime'];
     }
-
- 
-
-
-
-    public function createThumbnail(){
-        if(!file_exists("images/$this->fileName")){
+    
+    
+    
+    
+    
+    public function createThumbnail()
+    {
+        if (!file_exists($this->srcImagePath)) {
             return false;
         }
         
-        $imgCreateFunc = "imagecreatefrom".$this->extension;
-        $imgFunc = "image".$this->extension;
-        $image = $imgCreateFunc("images/$this->fileName");
+        
+        
+        $image = call_user_func($this->imgCreateFunc, $this->srcImagePath);
         imagealphablending($image, true);
-
-        $width = imagesx($image);
+        
+        $width  = imagesx($image);
         $height = imagesy($image);
-
-        if($width<$this->thumbWidth && $height<$this->thumbHeight){
-            $imgFunc($image, $this->thumbPath);
-            return true; 
+        
+        if ($width < $this->thumbWidth && $height < $this->thumbHeight) {
+            call_user_func($this->imgFunc, $image, $this->thumbPath);
+            return true;
         }
-
-
-        if($width>$height){
-            $scale = $this->thumbWidth/$width;
-            $cropHeight = $height;
-            $cropWidth = $cropHeight;
-            $cropX = floor($width/2-$cropHeight/2);
-            $cropY = 0;
-        }
-        else{
-            $scale = $this->thumbHeight/$height;
-            $cropWidth = $width;
-            $cropHeight = $cropWidth;
-            $cropY = floor($height/2-$cropWidth/2);
-            $cropX = 0;
-        }
-
-
-        if($this->mode=="scale"){
-            if($scale>1){
-                return false;
+        
+        
+        
+        
+        
+        if ($this->mode == "scale") {
+            $scaleX = $this->thumbWidth / $width;
+            $scaleY = $this->thumbHeight / $height;
+            $scale  = min($scaleX, $scaleY);
+            if ($scale > 1) {
+                $scale = 1;
             }
-            $x = 0;
-            $y = 0;
-            $newWidth = floor($width*$scale);
-            $newHeight = floor($height*$scale);
-    }
-
-        elseif ($this->mode=="crop") {
-            $newWidth = $this->thumbWidth;
+            
+            $x         = 0;
+            $y         = 0;
+            $newWidth  = floor($width * $scale);
+            $newHeight = floor($height * $scale);
+        }
+        
+        elseif ($this->mode == "crop") {
+            
+            
+            $newWidth  = $this->thumbWidth;
             $newHeight = $this->thumbHeight;
             
             
-            
-            if ($width==$height) {
-                $cropWidth = $newWidth;
-                $cropHeight = $newHeight;
-                $cropX = 0;
-                $cropY = 0;
-                
+            $cropWidth  = $height * $this->thumbWidth / $this->thumbHeight;
+            $cropHeight = $width * $this->thumbHeight / $this->thumbWidth;
+            if ($cropWidth > $width) {
+                $cropWidth = $width;
+                $cropY     = ($height - $cropHeight) / 2;
+                $cropX     = 0;
+            } else {
+                $cropHeight = $height;
+                $cropX      = ($width - $cropWidth) / 2;
+                $cropY      = 0;
             }
-           
-            $width = $cropWidth;
+            
+            $width  = $cropWidth;
             $height = $cropHeight;
             
             $x = $cropX;
             $y = $cropY;
-
-
+            
+            
         }
-
+        
         $tmpImage = imagecreatetruecolor($newWidth, $newHeight);
         imagealphablending($tmpImage, false);
         imagesavealpha($tmpImage, true);
         imagecopyresampled($tmpImage, $image, 0, 0, $x, $y, $newWidth, $newHeight, $width, $height);
-        $imgFunc($tmpImage, $this->thumbPath);
+        call_user_func($this->imgFunc, $tmpImage, $this->thumbPath);
         return true;
         
     }
-
-    public function showThumbnail(){
-        if($this->extension == "jpeg"){
-            $image = imagecreatefromjpeg($this->thumbPath);
-            header("Content-Type: $this->mime");
-            imagejpeg($image);
-        }
-
-        else{
-        $imageCreateFunc="imagecreatefrom".$this->extension;
-        $imageFunc="image".$this->extension;
-        $image = $imageCreateFunc($this->thumbPath);
+    
+    public function showThumbnail()
+    {
+        
+        $this->createThumbnail();
+        $image = call_user_func($this->imgCreateFunc, $this->thumbPath);
+        
         header("Content-Type: $this->mime");
-        $imageFunc($image);
-        }
+        call_user_func($this->imgFunc, $image);
+        
+        
     }
-
-
-    public static function link($fileName, $maxWidth, $maxHeight = NULL, $mode = "scale"){
-        if(!preg_match("/^scale|crop$/u", $mode)){
-         throw new Exception("Incorrect mode");
-         
+    
+    
+    public static function link($fileName, $maxWidth, $maxHeight = NULL, $mode = "scale")
+    {
+        if (!preg_match("/^scale|crop$/u", $mode)) {
+            throw new Exception("Incorrect mode");
+            
         }
-       
-        if($maxHeight==NULL){
+        
+        if ($maxHeight == NULL) {
             $maxHeight = $maxWidth;
         }
         $link = "/thumbnails/$mode/{$maxWidth}x$maxHeight/$fileName";
         return $link;
     }
-
-
-
-
-
+    
+    
+    
+    
+    
 }

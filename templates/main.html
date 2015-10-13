@@ -5,14 +5,11 @@
 <title>Restfull</title>
 </head>
 <body>
-<?php
-while(false!=($fname=readdir($dir))):
-	if(preg_match("/jpg|png|gif/", $fname)):
-?>
-<a href="/images/<?= $fname ?>"><img src="<?=Thumbnail::link($fname, 100, 100, "crop") ?>"></a>
+<?php foreach ($images as $image): ?>
+	
 
-<?php endif; endwhile
-?>
+<a href="/images/<?= $image ?>"><img src="<?=Thumbnail::link($image, 100, 100, Thumbnail::MODE_SCALE) ?>"></a>
+<?php endforeach; ?>
 
 </body>
 </html>
