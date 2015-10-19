@@ -28,8 +28,15 @@ class Thumbnail
         $this->thumbHeight  = $match[3];
         $this->fileName     = $match[4];
         $this->srcImagePath = "images/$this->fileName";
-        $this->extension    = $this->getExtension();
-        $this->mime         = $this->getMime();
+        $this->imageSize    = getimagesize($this->srcImagePath);
+        if ($this->imageSize == false) {
+            throw new Exception("Файл не является изображением");
+            
+        }
+        $this->extension     = $this->getExtension();
+        $this->mime          = $this->getMime();
+        $this->imgFunc       = "image" . $this->extension;
+        $this->imgCreateFunc = "imagecreatefrom" . $this->extension;
         
     }
     
@@ -40,24 +47,18 @@ class Thumbnail
     
     protected function getExtension()
     {
-        $size = getimagesize($this->srcImagePath);
+        $size = $this->imageSize;
         
         switch ($size[2]) {
             case IMAGETYPE_GIF:
-                $this->imgCreateFunc = "imagecreatefromgif";
-                $this->imgFunc       = "imagegif";
                 return "gif";
-                break;
+            
             case IMAGETYPE_JPEG:
-                $this->imgCreateFunc = "imagecreatefromjpeg";
-                $this->imgFunc       = "imagejpeg";
                 return "jpeg";
-                break;
+            
             case IMAGETYPE_PNG:
-                $this->imgCreateFunc = "imagecreatefrompng";
-                $this->imgFunc       = "imagepng";
                 return "png";
-                break;
+            
             default:
                 throw new PreviewGenerationException("Incorrect file extension");
                 
@@ -66,11 +67,8 @@ class Thumbnail
     
     protected function getMime()
     {
-        $size = getimagesize($this->srcImagePath);
-        if ($size == false) {
-            throw new Exception("Файл не является изображением");
-            
-        }
+        $size = $this->imageSize;
+        
         return $size['mime'];
     }
     
@@ -81,7 +79,7 @@ class Thumbnail
     public function createThumbnail()
     {
         if (!file_exists($this->srcImagePath)) {
-            return false;
+            throw new PreviewGenerationException("File doesn't exist");
         }
         
         
@@ -101,7 +99,7 @@ class Thumbnail
         
         
         
-        if ($this->mode == "scale") {
+        if ($this->mode == self::MODE_SCALE) {
             $scaleX = $this->thumbWidth / $width;
             $scaleY = $this->thumbHeight / $height;
             $scale  = min($scaleX, $scaleY);
@@ -115,7 +113,7 @@ class Thumbnail
             $newHeight = floor($height * $scale);
         }
         
-        elseif ($this->mode == "crop") {
+        elseif ($this->mode == self::MODE_CROP) {
             
             
             $newWidth  = $this->thumbWidth;
@@ -146,6 +144,8 @@ class Thumbnail
         $tmpImage = imagecreatetruecolor($newWidth, $newHeight);
         imagealphablending($tmpImage, false);
         imagesavealpha($tmpImage, true);
+        
+        
         imagecopyresampled($tmpImage, $image, 0, 0, $x, $y, $newWidth, $newHeight, $width, $height);
         call_user_func($this->imgFunc, $tmpImage, $this->thumbPath);
         return true;
@@ -156,18 +156,19 @@ class Thumbnail
     {
         
         $this->createThumbnail();
-        $image = call_user_func($this->imgCreateFunc, $this->thumbPath);
+        $image = file_get_contents($this->thumbPath);
+        
         
         header("Content-Type: $this->mime");
-        call_user_func($this->imgFunc, $image);
+        echo $image;
         
         
     }
     
     
-    public static function link($fileName, $maxWidth, $maxHeight = NULL, $mode = "scale")
+    public static function link($fileName, $maxWidth, $maxHeight = NULL, $mode = self::MODE_SCALE)
     {
-        if (!preg_match("/^scale|crop$/u", $mode)) {
+        if ($mode != self::MODE_SCALE && $mode != self::MODE_CROP) {
             throw new Exception("Incorrect mode");
             
         }

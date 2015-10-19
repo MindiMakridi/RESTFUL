@@ -32,7 +32,13 @@ if (preg_match("#^/thumbnails/#", $_SERVER['REQUEST_URI'])) {
     }
     catch (PreviewGenerationException $e) {
         echo $e->errorMessage();
+        header("HTTP/1.0 500 Internal Server Error");
     }
     
     $thumb->showThumbnail();
+}
+
+else{
+    header("HTTP/1.0 404 Not Found");
+    die("Incorrect url");
 }
