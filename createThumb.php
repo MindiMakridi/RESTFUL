@@ -17,8 +17,8 @@ $allowedRes = array(
 
 $matches = array();
 
-if (preg_match("#^/thumbnails/#", $_SERVER['REQUEST_URI'])) {
-    preg_match("#^/thumbnails/(crop|scale)/([0-9]+x[0-9]+)/#u", $_SERVER['REQUEST_URI'], $matches);
+if (preg_match("#^/thumbnails/(crop|scale)/([0-9]+x[0-9]+)/#u", $_SERVER['REQUEST_URI'], $matches)) {
+    
     
     if (!in_array($matches[2], $allowedRes[$matches[1]])) {
         header("HTTP/1.0 404 Not Found");
@@ -27,18 +27,21 @@ if (preg_match("#^/thumbnails/#", $_SERVER['REQUEST_URI'])) {
     
     
     try {
-        $thumb = new Thumbnail($_SERVER['REQUEST_URI']);
+        $thumb = new Thumbnail($_SERVER['REQUEST_URI'], __DIR__);
+         $thumb->showThumbnail();
         
     }
     catch (PreviewGenerationException $e) {
-        echo $e->errorMessage();
+        echo $e->getErrorMessage();
         header("HTTP/1.0 500 Internal Server Error");
+        die("error");
     }
     
-    $thumb->showThumbnail();
+   
 }
 
 else{
     header("HTTP/1.0 404 Not Found");
     die("Incorrect url");
 }
+

@@ -1,16 +1,19 @@
 <?php
 include "lib/Thumbnail.php";
-
+$allowedFormats = array(IMAGETYPE_GIF, IMAGETYPE_PNG, IMAGETYPE_JPEG);
 $dir    = opendir("images");
 $images = array();
 while (false !== ($fname = readdir($dir))) {
     if ($fname !== "." && $fname !== "..") {
         
         
-        $size = getimagesize("images/$fname");
-        if ($size[2] >= 1 && $size[3] <= 3) {
-            $images[] = $fname;
-        }
+        if($size = getimagesize("images/$fname")){
+          $format = $size[2];
+
+          if (in_array($format, $allowedFormats)) {
+              $images[] = $fname;
+          }
+      }
     }
 }
 
