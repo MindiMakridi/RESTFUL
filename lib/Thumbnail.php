@@ -28,17 +28,15 @@ class Thumbnail
         $this->fileName     = $match[4];
         $this->path = $path;
         
-        try{
-          $this->imageSize    = getimagesize($this->getSrcImagePath());
-          $this->imageFormat = $this->imageSize[2];
-          if(!$this->imageSize){
+      
+        $this->imageSize    = getimagesize($this->getSrcImagePath());
+        
+        if(!$this->imageSize){
             throw new PreviewGenerationException("Incorrect file extension");
-          }
         }
-       catch(PreviewGenerationException $e){
-            echo $e->getMessage();
-            
-        }
+        $this->imageFormat = $this->imageSize[2];
+        
+      
 
         
     }

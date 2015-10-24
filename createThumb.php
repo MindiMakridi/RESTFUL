@@ -32,8 +32,8 @@ if (preg_match("#^/thumbnails/(crop|scale)/([0-9]+x[0-9]+)/#u", $_SERVER['REQUES
         
     }
     catch (PreviewGenerationException $e) {
-        echo $e->getErrorMessage();
         header("HTTP/1.0 500 Internal Server Error");
+        echo $e->getErrorMessage();
         die("error");
     }
     
